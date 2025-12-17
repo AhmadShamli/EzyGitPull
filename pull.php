@@ -3,10 +3,12 @@ require_once __DIR__ . '/utils.php';
 require_auth();
 
 $env = load_env();
-$repo = isset($env['REPO_PATH']) && $env['REPO_PATH'] ? get_repo_local_path() : get_repo_local_path();
+$repo = get_repo_local_path();
 $git_url = $env['GIT_URL'] ?? '';
 $git_user = $env['GIT_USERNAME'] ?? '';
 $git_pass = $env['GIT_PASSWORD'] ?? '';
+$pull_method = $env['PULL_METHOD'] ?? 'git';
+$curl_available = function_exists('curl_version');
 
 // Build auth-embedded URL if credentials provided and url is https
 $useUrl = $git_url;
@@ -26,11 +28,17 @@ if (!is_dir(dirname($repo))) @mkdir(dirname($repo), 0777, true);
 
 $clear = isset($_POST['clear']) && in_array(strval($_POST['clear']), ['1','on','true','yes'], true);
 
-// Check git availability
-if (!git_is_available()) {
+// Decide method: if configured to HTTP, use HTTP; if configured to git but git isn't available, fall back to HTTP.
+if ($pull_method === 'http' || !git_is_available()) {
     header('Content-Type: text/plain');
     $writer = function($m) { echo htmlspecialchars($m) . "\n"; log_message($m); @flush(); @ob_flush(); };
-    $writer("Git not available: attempting HTTP download fallback for $git_url");
+
+    if ($pull_method === 'http') {
+        $writer("Pull method set to HTTP: attempting HTTP download for $git_url");
+    } else {
+        $writer("Git not available: attempting HTTP download fallback for $git_url");
+    }
+
     if ($clear) {
         $writer('Clear requested — attempting to remove existing content');
         if (!safe_rmdir($repo)) {
@@ -39,6 +47,7 @@ if (!git_is_available()) {
             $writer('Cleared target path');
         }
     }
+
     $ok = try_download_archive_from_git_url($git_url, $repo, $git_user, $git_pass, $writer);
     if ($ok) {
         echo "\n===DONE===\n";

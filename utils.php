@@ -1,8 +1,27 @@
 <?php
 session_start();
 
+/**
+ * Path to the .env file. Prefer the directory of the actual entry script
+ * (web request: $_SERVER['SCRIPT_FILENAME']; CLI: $_SERVER['argv'][0]).
+ * Falls back to the current directory if the entry cannot be determined.
+ */
 function env_path() {
-    return __DIR__ . '/.env';
+    $entry = null;
+
+    if (!empty($_SERVER['SCRIPT_FILENAME'])) {
+        $entry = $_SERVER['SCRIPT_FILENAME'];
+    } elseif (php_sapi_name() === 'cli' && !empty($_SERVER['argv'][0])) {
+        $entry = $_SERVER['argv'][0];
+    }
+
+    if ($entry) {
+        $entryDir = dirname(@realpath($entry) ?: $entry);
+        if ($entryDir) return rtrim($entryDir, '/\\') . DIRECTORY_SEPARATOR . '.env';
+    }
+
+    // Fallback to current directory
+    return __DIR__ . DIRECTORY_SEPARATOR . '.env';
 }
 
 /**
@@ -310,6 +329,7 @@ function write_download_info($repoPath, $info) {
 
 function download_file_http($url, $savePath, $git_user = '', $git_pass = '', $writer = null) {
     if (function_exists('curl_version')) {
+        log_message('Using curl to download: ' . $url);
         $ch = curl_init($url);
         $fp = fopen($savePath, 'w');
         curl_setopt($ch, CURLOPT_FILE, $fp);
@@ -323,11 +343,13 @@ function download_file_http($url, $savePath, $git_user = '', $git_pass = '', $wr
         $ok = curl_exec($ch);
         if (!$ok) {
             if ($writer) $writer('Download error: ' . curl_error($ch));
+            log_message('Curl download error for ' . $url . ': ' . curl_error($ch));
         }
         curl_close($ch);
         fclose($fp);
         return $ok;
     } else {
+        log_message('Using file_get_contents to download: ' . $url);
         $opts = ['http' => ['method' => 'GET', 'header' => "User-Agent: EzyGitSync\r\n", 'timeout' => 300]];
         if ($git_user !== '' || $git_pass !== '') {
             $auth = base64_encode($git_user . ':' . $git_pass);

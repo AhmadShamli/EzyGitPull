@@ -17,12 +17,12 @@ $git_ok = function_exists('git_is_available') ? git_is_available() : false;
 <html>
 <head>
     <meta charset="utf-8">
-    <title>EzyGitSync</title>
+    <title>EzyGitPull</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="container">
-    <h1>EzyGitSync</h1>
+    <h1>EzyGitPull</h1>
     <p>Logged in as <strong><?php echo htmlspecialchars($_SESSION['user']); ?></strong> — <a href="logout.php">Logout</a></p>
 
     <div class="card">
@@ -32,6 +32,7 @@ $git_ok = function_exists('git_is_available') ? git_is_available() : false;
         <div style="margin-bottom:8px">
             <label style="display:inline-block; margin-right:12px"><input type="checkbox" id="clearPath"> Clear existing files before deploy (replace instead of merge)</label>
             <button id="pullBtn">Pull / Sync</button>
+            <button id="refreshBtn" style="display:none; margin-left:8px;">Refresh</button>
         </div>
         <?php if (!$git_ok): ?>
             <div class="alert">Git is not available on the server. The app will attempt an HTTP download fallback (archive download) when you press Pull.</div>
@@ -85,23 +86,26 @@ pullBtn.addEventListener('click', () => {
     progressArea.style.display = 'block';
     progressLog.textContent = 'Starting...\n';
     pullBtn.disabled = true;
+    // Hide refresh button when starting a new pull (only keep details cleared for new run)
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) refreshBtn.style.display = 'none';
+
     xhr = new XMLHttpRequest();
     const form = new FormData();
     form.append('clear', document.getElementById('clearPath').checked ? '1' : '0');
     xhr.open('POST', 'pull.php');
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
-            // Done
+            // Done — keep the full progress log visible (do not auto-hide)
             const resp = xhr.responseText;
             if (resp.indexOf('===DONE===') !== -1 || resp.indexOf('===DONE (exit') !== -1) {
-                // Remove DONE marker
+                // Remove DONE marker but keep the rest
                 progressLog.textContent = resp.replace(/===DONE===/g, '').replace(/===DONE \(exit .*\)===/g, '');
             }
             pullBtn.disabled = false;
-            // hide after a short delay
-            setTimeout(() => { progressArea.style.display = 'none'; }, 1500);
-            // refresh page to show latest commits
-            setTimeout(() => { location.reload(); }, 1200);
+            // Keep progressArea visible so the user can review results. Show the Refresh button so they can reload to see commits.
+            if (refreshBtn) refreshBtn.style.display = 'inline-block';
+            progressLog.scrollTop = progressLog.scrollHeight;
         }
     };
     xhr.onprogress = function() {
@@ -111,6 +115,14 @@ pullBtn.addEventListener('click', () => {
     };
     xhr.send(form);
 });
+
+// Refresh button behavior: reload page to update commits/logs
+const refreshBtn = document.getElementById('refreshBtn');
+if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+        location.reload();
+    });
+}
 
 // Protected paths toggle
 const toggleProtected = document.getElementById('toggleProtected');
