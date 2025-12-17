@@ -1,12 +1,43 @@
 <?php
-require_once __DIR__ . '/utils.php';
+define('EZYPUBLIC', true);
+require_once __DIR__ . '/app/utils.php';
+
+// Serve static assets from app/static when requested (keeps webroot minimal)
+if (!empty($_GET['asset'])) {
+    $asset = basename($_GET['asset']);
+    $file = __DIR__ . '/app/static/' . $asset;
+    if (is_file($file)) {
+        $mime = 'text/plain';
+        if (substr($asset, -4) === '.css') $mime = 'text/css';
+        header('Content-Type: ' . $mime);
+        readfile($file);
+        exit;
+    }
+    http_response_code(404);
+    echo 'Not found';
+    exit;
+}
+
+// Simple front controller: route actions to guarded controllers in app/
+$action = $_GET['action'] ?? null;
+if ($action) {
+    $allowed = ['setup','login','logout','pull'];
+    if (in_array($action, $allowed, true)) {
+        include __DIR__ . '/app/' . $action . '.php';
+        exit;
+    }
+    http_response_code(404);
+    echo 'Not found';
+    exit;
+}
+
 $env = load_env();
 if (empty($env)) {
-    header('Location: ./setup.php');
+    header('Location: ./?action=setup');
     exit;
 }
 if (!is_authenticated()) {
-    header('Location: ./login.php');
+    header('Location: ./?action=login');
     exit;
 }
 $repo = get_repo_local_path();
@@ -18,12 +49,12 @@ $git_ok = function_exists('git_is_available') ? git_is_available() : false;
 <head>
     <meta charset="utf-8">
     <title>EzyGitPull</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="?asset=styles.css">
 </head>
 <body>
 <div class="container">
     <h1>EzyGitPull</h1>
-    <p>Logged in as <strong><?php echo htmlspecialchars($_SESSION['user']); ?></strong> — <a href="logout.php">Logout</a></p>
+    <p>Logged in as <strong><?php echo htmlspecialchars($_SESSION['user']); ?></strong> — <a href="?action=logout">Logout</a></p>
 
     <div class="card">
         <h2>Repository</h2>
@@ -93,7 +124,7 @@ pullBtn.addEventListener('click', () => {
     xhr = new XMLHttpRequest();
     const form = new FormData();
     form.append('clear', document.getElementById('clearPath').checked ? '1' : '0');
-    xhr.open('POST', 'pull.php');
+    xhr.open('POST', '?action=pull');
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4) {
             // Done — keep the full progress log visible (do not auto-hide)

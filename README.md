@@ -3,7 +3,7 @@
 Small single-user PHP app to pull data from Git (supports GitHub, GitLab, custom Git servers).
 
 Features
-- Uses `.env` for config (create `.env` using `setup.php` or copy `.example.env`)
+- Uses `.env` for config (create `.env` using the setup page: `./?action=setup` or copy `.example.env`)
 - Single-user login (username + password stored as hash in `.env`)
 - Pull/clone repository and stream git output to browser
 - Shows latest commits and recent activity log
@@ -11,8 +11,8 @@ Features
 
 Usage
 1. Place this project in a PHP-enabled folder and open in the browser.
-2. If no `.env` exists, visit `setup.php` and enter details (git URL, credentials if any, app username/password, repo path).
-3. Login at `login.php` and use the dashboard to pull/update.
+2. If no `.env` exists, visit the setup page at `./?action=setup` and enter details (git URL, credentials if any, app username/password, repo path).
+3. Login at `./?action=login` and use the dashboard to pull/update.
 
 Security notes
 - The app is intentionally simple for local use. Avoid exposing it to the public internet without extra security.
