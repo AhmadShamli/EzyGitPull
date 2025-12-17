@@ -65,9 +65,43 @@ function get_repo_local_path() {
     return $path;
 }
 
+function is_exec_available() {
+    static $cached_exec = null;
+    if ($cached_exec !== null) return $cached_exec;
+
+    // Basic checks: ensure function exists and is not disabled in php.ini
+    if (!function_exists('exec')) {
+        $cached_exec = false;
+        log_message('exec() is not available in this PHP environment (function does not exist)');
+        return $cached_exec;
+    }
+
+    $disabled = ini_get('disable_functions');
+    if ($disabled) {
+        $parts = array_map('trim', array_filter(explode(',', $disabled)));
+        $lower = array_map('strtolower', $parts);
+        if (in_array('exec', $lower, true)) {
+            $cached_exec = false;
+            log_message('exec() is disabled in php.ini (disable_functions)');
+            return $cached_exec;
+        }
+    }
+
+    $cached_exec = true;
+    return $cached_exec;
+}
+
 function git_is_available() {
     static $cached = null;
     if ($cached !== null) return $cached;
+
+    if (!is_exec_available()) {
+        // If exec() isn't available, we cannot call git on the CLI
+        $cached = false;
+        log_message('Cannot check git availability because exec() is not available');
+        return $cached;
+    }
+
     exec('git --version 2>&1', $o, $r);
     $cached = ($r === 0);
     if (!$cached) {
