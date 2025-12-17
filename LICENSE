@@ -1,0 +1,98 @@
+Copyright (c) 2025 Ahmad Shamli
+Permission is hereby granted, free of charge, to any person or entity
+obtaining a copy of this software and associated documentation files
+(the "Software"), to use, copy, modify, and distribute the Software,
+subject to the terms and conditions below.
+
+1. Permitted Use
+
+You may use the Software for any purpose, including commercial purposes,
+provided that Direct Software Revenue does not exceed USD 100,000 in any
+consecutive twelve (12) month period.
+
+2. Revenue Threshold and Commercial License Requirement
+
+If Direct Software Revenue exceeds USD 100,000 in any consecutive
+twelve (12) month period, you must obtain a separate commercial license
+from the Licensor in order to continue using, distributing, or
+commercially exploiting the Software.
+
+Continued use of the Software without a commercial license after
+exceeding the revenue threshold constitutes a material breach of this
+license and results in automatic termination of the rights granted
+herein.
+
+3. Definition of Direct Software Revenue
+
+"Direct Software Revenue" means revenue received in exchange for access
+to, use of, or rights in the Software itself, including, without
+limitation:
+
+(a) Sale or licensing of the Software;
+(b) Paid subscriptions or usage fees where the Software is the primary
+    product or service;
+(c) Hosting, SaaS, or managed service offerings where the Software
+    itself is the primary value delivered;
+(d) Paid add-ons, extensions, or enhancements that directly modify or
+    extend the Software.
+
+Direct Software Revenue expressly excludes:
+
+(a) Revenue from products, services, or businesses that merely use the
+    Software as an internal tool, dependency, library, or development
+    aid;
+(b) Revenue from unrelated or downstream products developed using the
+    Software;
+(c) Consulting, integration, customization, or support services where
+    the Software is not sold or licensed as a standalone product;
+(d) General business revenue not directly attributable to access to the
+    Software itself.
+
+4. Distribution
+
+Redistributions of the Software must include this license in its
+entirety and retain all copyright notices and disclaimers.
+
+5. LLM Assistance Disclosure
+
+Portions of the Software were developed with the assistance of large
+language model–based or machine-assisted development tools. Such tools
+were used solely as productivity aids. All design, architectural, and
+implementation decisions were made by the Licensor or its authorized
+contributors, who retain full ownership and responsibility for the
+Software.
+
+6. Support and Updates
+
+The Licensor may, at its discretion, provide updates, enhancements,
+bug fixes, or technical support for the Software. Any such support or
+updates are provided on a best-effort basis and are not guaranteed.
+Nothing in this license obligates the Licensor to provide maintenance,
+support services, updates, or future versions of the Software unless
+expressly agreed in writing.
+
+7. Disclaimer of Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTY
+OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING BUT NOT
+LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE, NON-INFRINGEMENT, OR ACCURACY.
+
+8. Limitation of Liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL
+THE LICENSOR BE LIABLE FOR ANY DAMAGES WHATSOEVER, WHETHER DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE, ARISING
+OUT OF OR RELATED TO THE USE OF THE SOFTWARE.
+
+9. Termination
+
+This license terminates automatically upon any breach of its terms.
+Upon termination, all rights granted herein immediately cease.
+
+10. Governing Law and Jurisdiction
+
+This license shall be governed by and construed in accordance with the
+laws of Malaysia, without regard to its conflict of law principles.
+The courts of Malaysia shall have exclusive jurisdiction over any
+dispute arising out of or in connection with this license.
