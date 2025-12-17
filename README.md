@@ -19,7 +19,7 @@ Security notes
 - Credentials may be embedded into clone URL for private repos; store `.env` securely.
 
 Requirements
-- PHP 7.0+
+- PHP 8.3+
 - `git` available on the server path
 
 Note: The app checks for the `git` binary at runtime. If Git is not installed or not present in the PATH, the app will attempt an HTTP download fallback (archive download) from common providers like GitHub/GitLab when you press Pull. Installing Git is still recommended for full functionality (commit history, pulls, etc.), but the fallback allows retrieving repository contents without Git installed.
