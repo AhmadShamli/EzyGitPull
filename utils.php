@@ -91,6 +91,28 @@ function is_exec_available() {
     return $cached_exec;
 }
 
+/**
+ * Safe wrapper for executing shell commands.
+ * If exec() is disabled or unavailable, this will log and return false
+ * without attempting to call the missing function.
+ *
+ * @param string $cmd Command to execute
+ * @param array|null &$output Captured output lines
+ * @param int|null   &$return_var Return code
+ * @return bool True when command executed and returned 0, false otherwise
+ */
+function safe_exec($cmd, &$output = null, &$return_var = null) {
+    if (!is_exec_available()) {
+        $output = [];
+        $return_var = -1;
+        log_message('exec() not available — attempted command: ' . $cmd);
+        return false;
+    }
+    // exec() is available — call it and return whether the command succeeded (return code 0)
+    exec($cmd, $output, $return_var);
+    return $return_var === 0;
+}
+
 function git_is_available() {
     static $cached = null;
     if ($cached !== null) return $cached;
@@ -102,7 +124,7 @@ function git_is_available() {
         return $cached;
     }
 
-    exec('git --version 2>&1', $o, $r);
+    safe_exec('git --version 2>&1', $o, $r);
     $cached = ($r === 0);
     if (!$cached) {
         log_message("Git binary not found on server (git --version failed)");
@@ -367,7 +389,7 @@ function git_latest_commits($repoPath, $count = 5) {
     if (git_is_available()) {
         if (!is_dir($repoPath . '/.git')) return ['Repository not cloned yet'];
         $cmd = "git -C " . escapeshellarg($repoPath) . " log -n " . intval($count) . " --pretty=format:'%h %ad %s' --date=short";
-        exec($cmd, $out, $ret);
+        safe_exec($cmd, $out, $ret);
         if ($ret !== 0) return ['Could not read git log'];
         return $out;
     } else {
