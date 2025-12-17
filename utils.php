@@ -5,6 +5,95 @@ function env_path() {
     return __DIR__ . '/.env';
 }
 
+/**
+ * Normalize a filesystem path by collapsing '.' and '..' segments without requiring
+ * the path to exist on disk. Preserves absolute paths (including Windows drive letters).
+ *
+ * @param string $path
+ * @return string
+ */
+function normalize_path($path) {
+    if (!is_string($path) || $path === '') return $path;
+
+    // Use forward slashes internally
+    $path = str_replace('\\', '/', $path);
+
+    // Preserve and strip prefix
+    $prefix = '';
+    if (preg_match('#^[A-Za-z]:/#', $path)) {
+        // Windows absolute with drive letter, e.g. C:/dir
+        $prefix = substr($path, 0, 3); // C:/
+        $path = substr($path, 3);
+    } elseif (preg_match('#^[A-Za-z]:$#', $path)) {
+        // Windows drive only
+        $prefix = rtrim($path, '/') . '/';
+        $path = '';
+    } elseif (strpos($path, '/') === 0) {
+        // Unix absolute
+        $prefix = '/';
+        $path = ltrim($path, '/');
+    }
+
+    $parts = $path === '' ? [] : explode('/', $path);
+    $stack = [];
+    foreach ($parts as $part) {
+        if ($part === '' || $part === '.') continue;
+        if ($part === '..') {
+            if (!empty($stack) && end($stack) !== '..') {
+                array_pop($stack);
+            } else {
+                // If relative path, keep leading '..', otherwise ignore (don't go above root)
+                if ($prefix === '') {
+                    $stack[] = '..';
+                }
+            }
+        } else {
+            $stack[] = $part;
+        }
+    }
+
+    $joined = implode(DIRECTORY_SEPARATOR, $stack);
+    if ($prefix !== '') {
+        // Re-assemble preserving prefix
+        if (substr($prefix, -1) === '/' || substr($prefix, -1) === '\\') {
+            return rtrim($prefix, '\\/') . DIRECTORY_SEPARATOR . $joined;
+        }
+        return $prefix . ($joined !== '' ? DIRECTORY_SEPARATOR . $joined : '');
+    }
+
+    return $joined === '' ? '.' : $joined;
+}
+
+/**
+ * Resolve any filesystem path to an absolute path.
+ * - If the path is already absolute, returns a realpath() when possible, otherwise a
+ *   normalized absolute path with '.' and '..' resolved.
+ * - If the path is relative, it's resolved against the provided $base (defaults to project dir),
+ *   then normalized.
+ *
+ * @param string $path
+ * @param string|null $base Base directory to resolve relative paths against (defaults to __DIR__)
+ * @return string|false Absolute normalized path, or false on invalid input
+ */
+function resolve_absolute_path($path, $base = null) {
+    if (!is_string($path) || $path === '') return false;
+    $base = $base === null ? __DIR__ : $base;
+
+    // If already absolute (unix or Windows drive), try realpath first
+    if (preg_match('#^([A-Za-z]:)?[\\/]#', $path)) {
+        $real = @realpath($path);
+        if ($real) return $real;
+        // Not on filesystem — normalize and return
+        return rtrim(normalize_path($path), '/\\');
+    }
+
+    // Relative path: join with base then try realpath
+    $joined = rtrim($base, '/\\') . '/' . $path;
+    $real = @realpath($joined);
+    if ($real) return $real;
+    return rtrim(normalize_path($joined), '/\\');
+}
+
 function load_env($path = null) {
     $path = $path ?: env_path();
     if (!file_exists($path)) return [];
@@ -57,13 +146,9 @@ function get_repo_local_path() {
         ? $env['REPO_PATH']
         : (__DIR__ . '/repos/myrepo');
 
-    // If relative path, make it relative to project root
-    if (!preg_match('#^([a-zA-Z]:)?[\\/]#', $path)) {
-        $path = __DIR__ . '/' . $path;
-    }
+    return resolve_absolute_path($path, __DIR__);
+} 
 
-    return $path;
-}
 
 function is_exec_available() {
     static $cached_exec = null;
@@ -153,18 +238,14 @@ function get_protected_paths() {
     $parts = array_filter(array_map('trim', explode(',', $raw)));
     $paths = [];
     foreach ($parts as $p) {
-        // Resolve relative paths to project dir
-        if (!preg_match('#^([a-zA-Z]:)?[\\/]#', $p)) {
-            $p = __DIR__ . '/' . $p;
-        }
-        $real = @realpath($p) ?: rtrim($p, '/\\');
-        if ($real) $paths[] = $real;
+        $real = resolve_absolute_path($p, __DIR__);
+        if ($real) $paths[] = rtrim($real, '/\\');
     }
     return array_values(array_unique($paths));
 }
 
 function is_path_protected($path) {
-    $real = @realpath($path);
+    $real = resolve_absolute_path($path);
     if (!$real) return false;
     $protected = get_protected_paths();
     foreach ($protected as $prot) {
@@ -177,10 +258,10 @@ function is_path_protected($path) {
 
 function safe_rmdir($dir) {
     // Basic safety checks: do not remove root or drive root, and prefer paths under project dir
-    $real = @realpath($dir);
-    $root = @realpath(__DIR__);
+    $real = resolve_absolute_path($dir, __DIR__);
+    $root = resolve_absolute_path(__DIR__);
     if (!$real) return false;
-    if ($real === '/' || preg_match('#^[A-Z]:\\$#i', $real)) {
+    if ($real === '/' || preg_match('#^[A-Z]:\\\\$#i', $real)) {
         log_message('Refused to remove root path: ' . $real);
         return false;
     }
